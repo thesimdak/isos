@@ -1,8 +1,5 @@
 package cz.svetsplhu.isos.rest.model;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import cz.svetsplhu.isos.rest.model.serializer.ParticipationSerializer;
-
 import java.time.LocalDate;
 
 /**

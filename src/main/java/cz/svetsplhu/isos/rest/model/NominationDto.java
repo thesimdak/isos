@@ -1,23 +1,17 @@
 package cz.svetsplhu.isos.rest.model;
 
+import java.util.List;
+
 /**
  * Rest model for a nomination to a national championship.
  */
 public class NominationDto {
 
-    private String competitionName;
     private String firstName;
     private String lastName;
     private String yearOfBirth;
     private String time;
-
-    public String getCompetitionName() {
-        return competitionName;
-    }
-
-    public void setCompetitionName(String competitionName) {
-        this.competitionName = competitionName;
-    }
+    private List<CompetitionTimeDto> competitionTimes;
 
     public String getFirstName() {
         return firstName;
@@ -51,14 +45,22 @@ public class NominationDto {
         this.time = time;
     }
 
+    public List<CompetitionTimeDto> getCompetitionTimes() {
+        return competitionTimes;
+    }
+
+    public void setCompetitionTimes(List<CompetitionTimeDto> competitionTimes) {
+        this.competitionTimes = competitionTimes;
+    }
+
     @Override
     public String toString() {
-        return "Nomination{" +
-                "competitionName='" + competitionName + '\'' +
-                ", firstName='" + firstName + '\'' +
+        return "NominationDto{" +
+                "firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", yearOfBirth='" + yearOfBirth + '\'' +
                 ", time='" + time + '\'' +
+                ", competitionTimes=" + competitionTimes +
                 '}';
     }
 }

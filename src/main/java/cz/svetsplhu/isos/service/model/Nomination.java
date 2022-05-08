@@ -1,24 +1,18 @@
 package cz.svetsplhu.isos.service.model;
 
-import java.util.Objects;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Model of a nomination to a national championship.
  */
 public class Nomination {
-    private String competitionName;
     private String firstName;
     private String lastName;
     private String yearOfBirth;
-    private String time;
-
-    public String getCompetitionName() {
-        return competitionName;
-    }
-
-    public void setCompetitionName(String competitionName) {
-        this.competitionName = competitionName;
-    }
+    private BigDecimal time;
+    private List<CompetitionTime> competitionTimes;
 
     public String getFirstName() {
         return firstName;
@@ -44,22 +38,33 @@ public class Nomination {
         this.yearOfBirth = yearOfBirth;
     }
 
-    public String getTime() {
+    public BigDecimal getTime() {
         return time;
     }
 
-    public void setTime(String time) {
+    public void setTime(BigDecimal time) {
         this.time = time;
+    }
+
+    public List<CompetitionTime> getCompetitionTimes() {
+        if (competitionTimes == null) {
+            competitionTimes = new ArrayList<>();
+        }
+        return competitionTimes;
+    }
+
+    public void setCompetitionTimes(List<CompetitionTime> competitionTimes) {
+        this.competitionTimes = competitionTimes;
     }
 
     @Override
     public String toString() {
-        return "Nomination{" +
-                "competitionName='" + competitionName + '\'' +
-                ", firstName='" + firstName + '\'' +
+        return "NominationDto{" +
+                "firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", yearOfBirth='" + yearOfBirth + '\'' +
                 ", time='" + time + '\'' +
+                ", competitionTimes=" + competitionTimes +
                 '}';
     }
 }

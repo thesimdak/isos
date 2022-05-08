@@ -1,16 +1,14 @@
 package cz.svetsplhu.isos.service;
 
 import cz.svetsplhu.isos.repository.*;
-import cz.svetsplhu.isos.repository.model.CompetitionEntity;
-import cz.svetsplhu.isos.repository.model.ParticipationEntity;
-import cz.svetsplhu.isos.repository.model.RopeClimberEntity;
-import cz.svetsplhu.isos.repository.model.TimeEntity;
+import cz.svetsplhu.isos.repository.model.*;
 import cz.svetsplhu.isos.repository.model.comparator.ParticipationComparator;
 import cz.svetsplhu.isos.service.mapper.CompetitionMapper;
 import cz.svetsplhu.isos.service.mapper.NominationMapper;
 import cz.svetsplhu.isos.service.mapper.ParticipationMapper;
 import cz.svetsplhu.isos.service.mapper.TimeMapper;
 import cz.svetsplhu.isos.service.model.Competition;
+import cz.svetsplhu.isos.service.model.CompetitionTime;
 import cz.svetsplhu.isos.service.model.Nomination;
 import cz.svetsplhu.isos.service.model.Participation;
 import cz.svetsplhu.isos.service.uploader.ResultLoader;
@@ -19,6 +17,7 @@ import org.springframework.stereotype.Service;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -136,12 +135,29 @@ public class ResultService {
     }
 
     public List<Nomination> getNominations(Integer year,
-                                           Long categoryId,
-                                           Double time,
-                                           Integer participationCount) {
-        return nominationRepository.getNominations().stream()
-                .map(nominationMapper::map)
-                .collect(Collectors.toList());
+                                           Long categoryId) {
+        List<NominationEntity> nominationEntities = nominationRepository.getNominations(year, categoryId);
+        Map<String, Nomination> nominations = new HashMap<>();
+        for (NominationEntity nominationEntity : nominationEntities) {
+            String nominationKey = nominationEntity.getFirstName() + ":" + nominationEntity.getLastName() + ":" + nominationEntity.getYearOfBirth();
+            Nomination nomination = nominations.get(nominationKey);
+            if (nomination == null) {
+                nomination = new Nomination();
+                nomination.setFirstName(nominationEntity.getFirstName());
+                nomination.setLastName(nominationEntity.getLastName());
+                nomination.setYearOfBirth(nominationEntity.getYearOfBirth());
+                nomination.setTime(nominationEntity.getTime());
+                nominations.put(nominationKey, nomination);
+            }
+            CompetitionTime competitionTime = new CompetitionTime();
+            competitionTime.setTime(nominationEntity.getTime());
+            competitionTime.setCompetitionName(nominationEntity.getCompetitionName());
+            nomination.getCompetitionTimes().add(competitionTime);
+            if (nomination.getTime().compareTo(nominationEntity.getTime()) < 0) {
+                nomination.setTime(nominationEntity.getTime());
+            }
+        }
+        return new ArrayList<>(nominations.values());
     }
 
     @Transactional
