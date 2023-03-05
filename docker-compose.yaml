@@ -1,0 +1,116 @@
+
+## We're using version 3.7X of the Docker Compose file format
+version: "3.7"
+
+# Define services/containers
+services:
+  traefik:
+    image: "traefik:v2.6"
+    container_name: "traefik"
+    command:
+      #- "--log.level=DEBUG"
+      #- "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      # cert resolver
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      #      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.caserver=https://acme-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.myresolver.acme.email=thesimdak@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - my_network
+  # MySQL container
+  mysql:
+    # Use mysql:8.0.19 image
+    image: mysql:8.0.19
+    # ports:
+    #  - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    # Pass a list of environment variables to the container
+    environment:
+      MYSQL_DATABASE: svetsplhu
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: palestra
+      MYSQL_ROOT_PASSWORD: palestra
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - my_network
+
+  # phpMyAdmin container
+  phpmyadmin:
+    # Use phpmyadmin/phpmyadmin:5.0.2 image
+    image: phpmyadmin/phpmyadmin:5.0.2
+    # Map port 8080 on the host to port 80 inside the container
+    # Syntax is: "HOST_PORT:CONTAINER_PORT"
+    ports:
+      - "8089:80"
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: +++
+    # Wait for "mysql" container to start first
+    depends_on:
+      - mysql
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - my_network
+  app:
+    image: openjdk:8
+    # Map port 8080 on the host to port 80 inside the container
+    # Syntax is: "HOST_PORT:CONTAINER_PORT"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./app:/home
+    command: ['java', '-jar', '/home/app.jar']
+    # Wait for "mysql" container to start first
+    depends_on:
+      - mysql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`isos.svetsplhu.cz`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.routers.app.tls.certresolver=myresolver"
+      - traefik.http.middlewares.strip-api.stripprefix.prefixes=/api
+      - traefik.http.routers.app.middlewares=strip-api@docker
+    networks:
+      - my_network
+  frontend:
+    image: nginx:1.17.1-alpine
+    restart: always
+    volumes:
+      - ./app/frontend:/usr/share/nginx/html
+      - ./app/nginx:/etc/nginx/conf.d
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`isos.svetsplhu.cz`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+    networks:
+      - my_network
+
+volumes:
+  mysql-data:
+
+networks:
+  my_network:
